@@ -1,11 +1,48 @@
 ---
-import Welcome from '../components/Welcome.astro';
 import Layout from '../layouts/Layout.astro';
-
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+import ExtendibleHashVisualization from '../components/ExtendibleHash/ExtendibleHashVisualization.tsx';
+import LiquidEther from '../components/LiquidEther/LiquidEther';
 ---
 
 <Layout>
-	<Welcome />
+
+	<ExtendibleHashVisualization client:load />
+
+	<div class="footer">
+		<div style={{ width: '100%', height: '100%', position: 'absolute' }}>
+			<LiquidEther
+		client:load
+		colors={[ '#5227FF', '#FF9FFC', '#B19EEF' ]}
+		mouseForce={20}
+		cursorSize={100}
+		isViscous={false}
+		viscous={30}
+		iterationsViscous={32}
+		iterationsPoisson={32}
+		resolution={0.5}
+		isBounce={false}
+		autoDemo={true}
+		autoSpeed={0.5}
+		autoIntensity={2.2}
+		takeoverDuration={0.25}
+		autoResumeDelay={1000}
+		autoRampDuration={0.6}
+	  />
+		</div>
+		<h1>Computer Science Is Fun, Isn't It?</h1>
+	</div>
+
+	<!-- Credits Bar -->
+	<div class="credits-bar">
+		<div class="credits-left">
+			Designed and Developed with 
+			<svg class="heart" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+				<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+			</svg>
+			by Amr Mahmoud
+		</div>
+		<div class="credits-right">
+			© Copyrights reserved by Faculty of Engineering - Cairo University
+		</div>
+	</div>
 </Layout>
