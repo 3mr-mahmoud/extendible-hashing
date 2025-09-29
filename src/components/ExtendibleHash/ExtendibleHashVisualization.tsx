@@ -32,11 +32,13 @@ interface ExtendibleHashState {
 
 const ExtendibleHashVisualization: React.FC = () => {
   // Configuration state
-  const [hashModulo, setHashModulo] = useState(97);
+  const [hashModulo, setHashModulo] = useState(32);
   const [maxGlobalDepth, setMaxGlobalDepth] = useState(4);
-  const [bucketCapacity, setBucketCapacity] = useState(3);
+  const [bucketCapacity, setBucketCapacity] = useState(2);
   const [newKey, setNewKey] = useState<string>('');
   const [animatingBucket, setAnimatingBucket] = useState<number | null>(null);
+  const [hashPreview, setHashPreview] = useState<{hash: number, binary: string} | null>(null);
+  const [collisionMessage, setCollisionMessage] = useState<string | null>(null);
 
   // Initialize empty hash structure with 2 buckets
   const initializeHash = useCallback((): ExtendibleHashState => {
@@ -79,8 +81,10 @@ const ExtendibleHashVisualization: React.FC = () => {
 
   // Convert hash to binary string based on global depth
   const getBinaryAddress = useCallback((hash: number, depth: number): string => {
-    return hash.toString(2).slice(-depth).padStart(depth, '0');
-  }, []);
+    //longest bits length 
+    const hashBitsLength = Math.ceil(Math.log2(hashModulo));
+    return hash.toString(2).padStart(hashBitsLength, '0').slice(0,depth);
+  }, [hashModulo]);
 
   // Find bucket for a given key
   const findBucket = useCallback((key: number, state: ExtendibleHashState): Bucket => {
@@ -126,7 +130,7 @@ const ExtendibleHashVisualization: React.FC = () => {
     // Create new bucket
     const newBucket: Bucket = {
       id: state.nextBucketId,
-      binaryAddress: '1' + bucket.binaryAddress,
+      binaryAddress: bucket.binaryAddress + '1',
       localDepth: bucket.localDepth + 1,
       entries: [],
       maxCapacity: state.bucketCapacity,
@@ -135,7 +139,7 @@ const ExtendibleHashVisualization: React.FC = () => {
     // Update original bucket's local depth
     const updatedBucket: Bucket = {
       ...bucket,
-      binaryAddress: '0' + bucket.binaryAddress,
+      binaryAddress: bucket.binaryAddress + '0',
       localDepth: bucket.localDepth + 1,
       entries: [],
     };
@@ -150,7 +154,7 @@ const ExtendibleHashVisualization: React.FC = () => {
      
      const hash = hashFunction(entry.key);
      const binaryAddr = getBinaryAddress(hash, bucket.localDepth + 1);
-     const bitAtLocalDepth = binaryAddr[0];
+     const bitAtLocalDepth = binaryAddr[bucket.localDepth];
       
       if (bitAtLocalDepth === '0') {
         updatedBucket.entries.push(entry);
@@ -175,7 +179,7 @@ const ExtendibleHashVisualization: React.FC = () => {
       const entry = newDirectory[i];
       // search for all buckets with the same binaryprefix for all depths starting from global depth down to local depth
         for (let depth = newGlobalDepth; depth >= 1; depth--) {
-            const prefix = entry.binaryAddress.slice(-depth);
+            const prefix = entry.binaryAddress.slice(0, depth);
             const bucketWithPrefix = Array.from(newBuckets.values()).find(b => b.binaryAddress === prefix);
             if (bucketWithPrefix) {
                 newDirectory[i] = { ...entry, bucketId: bucketWithPrefix.id };
@@ -196,75 +200,184 @@ const ExtendibleHashVisualization: React.FC = () => {
   const insertEntry = useCallback((key: number) => {
     setHashState(prevState => {
       let currentState = { ...prevState };
-      const bucket = findBucket(key, currentState);
-
-      // Check if key already exists
-      const existingEntryIndex = bucket.entries.findIndex(entry => entry.key === key);
-      if (existingEntryIndex !== -1) {
-        // Key already exists, no need to insert
-        return currentState;
-      }
-
-      const hash = hashFunction(key);
-      const binaryHash = hash.toString(2);
       
+      // Check if key already exists anywhere in the hash table
+      for (const bucket of currentState.buckets.values()) {
+        const existingEntryIndex = bucket.entries.findIndex(entry => entry.key === key);
+        if (existingEntryIndex !== -1) {
+          // Key already exists, no need to insert
+          return currentState;
+        }
+      }
+      
+      const hash = hashFunction(key);
+      const hashBitsLength = Math.ceil(Math.log2(hashModulo));
+      const binaryHash = hash.toString(2).padStart(hashBitsLength, '0');
+
       // Add new entry
       const newEntry: HashEntry = { key, hash, binaryHash };
       
-      // Check if bucket has space
-      if (bucket.entries.length < bucket.maxCapacity) {
-        const updatedBucket = {
-          ...bucket,
-          entries: [...bucket.entries, newEntry],
-        };
-        
-        const newBuckets = new Map(currentState.buckets);
-        newBuckets.set(bucket.id, updatedBucket);
-        
-        return { ...currentState, buckets: newBuckets };
-      } else {
-        // Need to split bucket
-        setAnimatingBucket(bucket.id);
-        setTimeout(() => setAnimatingBucket(null), 1000);
-        
-        // First split the bucket
-        currentState = splitBucket(bucket.id, currentState);
-        
-        // Then insert into appropriate bucket
+      // Keep splitting until we can insert the entry
+      let insertionCompleted = false;
+      let maxIterations = 10; // Prevent infinite loops
+      let iteration = 0;
+      
+      while (!insertionCompleted && iteration < maxIterations) {
+        iteration++;
         const targetBucket = findBucket(key, currentState);
-        const updatedTargetBucket = {
-          ...targetBucket,
-          entries: [...targetBucket.entries, newEntry],
-        };
         
-        const newBuckets = new Map(currentState.buckets);
-        newBuckets.set(targetBucket.id, updatedTargetBucket);
-        
-        return { ...currentState, buckets: newBuckets };
+        // Check if bucket has space
+        if (targetBucket.entries.length < targetBucket.maxCapacity) {
+          // We can insert here
+          const updatedBucket = {
+            ...targetBucket,
+            entries: [...targetBucket.entries, newEntry],
+          };
+          
+          const newBuckets = new Map(currentState.buckets);
+          newBuckets.set(targetBucket.id, updatedBucket);
+          
+          currentState = { ...currentState, buckets: newBuckets };
+          insertionCompleted = true;
+        } else {
+          // Need to split bucket - check if we can split
+          if (targetBucket.localDepth >= currentState.maxGlobalDepth) {
+            // Cannot split anymore, force insert (overflow situation)
+            console.warn(`Cannot split bucket ${targetBucket.id} further. Max depth reached. Forcing insertion.`);
+            const updatedBucket = {
+              ...targetBucket,
+              entries: [...targetBucket.entries, newEntry],
+            };
+            
+            const newBuckets = new Map(currentState.buckets);
+            newBuckets.set(targetBucket.id, updatedBucket);
+            
+            currentState = { ...currentState, buckets: newBuckets };
+            insertionCompleted = true;
+          } else {
+            // Split the bucket and continue the loop
+            setAnimatingBucket(targetBucket.id);
+            setTimeout(() => setAnimatingBucket(null), 1000);
+            
+            currentState = splitBucket(targetBucket.id, currentState);
+            console.log(`Split bucket ${targetBucket.id}, iteration ${iteration}. Trying insertion again.`);
+          }
+        }
       }
+      
+      if (iteration >= maxIterations) {
+        console.error(`Maximum iterations reached while trying to insert key ${key}. Insertion may have failed.`);
+      }
+      
+      return currentState;
     });
-  }, [findBucket, splitBucket, hashFunction, getBinaryAddress]);
+  }, [findBucket, splitBucket, hashFunction, hashModulo]);
+
+  // Check if hash already exists in the hash table
+  const checkHashCollision = useCallback((hash: number): {count: number, keys: number[], shouldPrevent: boolean, message: string} | null => {
+    const collidingEntries: number[] = [];
+    
+    // Collect all entries with the same hash from all buckets
+    for (const bucket of hashState.buckets.values()) {
+      for (const entry of bucket.entries) {
+        if (entry.hash === hash) {
+          collidingEntries.push(entry.key);
+        }
+      }
+    }
+    
+    if (collidingEntries.length === 0) {
+      return null;
+    }
+    
+    const shouldPrevent = collidingEntries.length >= bucketCapacity;
+    let message;
+    
+    if (shouldPrevent) {
+      message = `Cannot insert! Hash collision limit exceeded. ${collidingEntries.length} keys (${collidingEntries.join(', ')}) already produce hash ${hash}, which meets/exceeds bucket capacity (${bucketCapacity})`;
+    } else {
+      message = `Hash collision detected! Key(s) ${collidingEntries.join(', ')} already produce hash ${hash} (${collidingEntries.length}/${bucketCapacity} capacity used)`;
+    }
+    
+    return {
+      count: collidingEntries.length,
+      keys: collidingEntries,
+      shouldPrevent,
+      message
+    };
+  }, [hashState.buckets, bucketCapacity]);
+
+  // Update hash preview when key changes
+  const updateHashPreview = useCallback((keyStr: string) => {
+    const key = parseInt(keyStr);
+    if (isNaN(key) || key < 0) {
+      setHashPreview(null);
+      setCollisionMessage(null);
+      return;
+    }
+    
+    const hash = hashFunction(key);
+    const hashBitsLength = Math.ceil(Math.log2(hashModulo));
+    const binary = hash.toString(2).padStart(hashBitsLength, '0');
+    
+    // Format binary with spaces for better readability
+    const formattedBinary = binary;
+    
+    setHashPreview({ hash, binary: formattedBinary });
+    
+    // Check for collision
+    const collision = checkHashCollision(hash);
+    setCollisionMessage(collision?.message || null);
+  }, [hashFunction, hashModulo, checkHashCollision]);
+
+  // Handle key input change with validation
+  const handleKeyChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const numValue = parseInt(value);
+    
+    // Allow empty string or valid non-negative numbers
+    if (value === '' || (!isNaN(numValue) && numValue >= 0)) {
+      setNewKey(value);
+      updateHashPreview(value);
+    }
+  }, [updateHashPreview]);
 
   // Handle form submission
   const handleInsert = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     const key = parseInt(newKey);
-    if (isNaN(key)) return;
+    if (isNaN(key) || key < 0) return;
+    
+    // Check if collision would exceed capacity
+    const hash = hashFunction(key);
+    const collision = checkHashCollision(hash);
+    if (collision?.shouldPrevent) {
+      // Don't proceed with insertion if collision count exceeds capacity
+      return;
+    }
     
     insertEntry(key);
     setNewKey('');
-  }, [newKey, insertEntry]);
+    setHashPreview(null);
+    setCollisionMessage(null);
+  }, [newKey, insertEntry, hashFunction, checkHashCollision]);
 
   // Reset hash structure
   const handleReset = useCallback(() => {
     setHashState(initializeHash());
     setAnimatingBucket(null);
+    setNewKey('');
+    setHashPreview(null);
+    setCollisionMessage(null);
   }, [initializeHash]);
 
   // Apply configuration changes
   const handleConfigChange = useCallback(() => {
     setHashState(initializeHash());
     setAnimatingBucket(null);
+    setNewKey('');
+    setHashPreview(null);
+    setCollisionMessage(null);
   }, [initializeHash]);
 
   return (
@@ -287,7 +400,7 @@ const ExtendibleHashVisualization: React.FC = () => {
           </label>
           
           <label>
-            Max Global Depth (k):
+            Max Global Depth:
             <input
               type="number"
               min="1"
@@ -299,7 +412,7 @@ const ExtendibleHashVisualization: React.FC = () => {
           </label>
           
           <label>
-            Bucket Capacity (r):
+            Bucket Capacity:
             <input
               type="number"
               min="1"
@@ -314,20 +427,20 @@ const ExtendibleHashVisualization: React.FC = () => {
         </div>
       </div>
 
-      {/* Insert Panel */}
-      <div className="insert-panel">
-        <form onSubmit={handleInsert}>
-          <input
-            type="number"
-            placeholder="Enter key to insert"
-            value={newKey}
-            onChange={(e) => setNewKey(e.target.value)}
-            required
-          />
-          <button type="submit">Insert Key</button>
-        </form>
-
+      {/* Algorithm Info */}
+      <div className="info-panel">
+        <h3>Current Configuration</h3>
+        <div className="info-grid">
+          <div>Hash Function: key % {hashModulo}</div>
+          <div>Global Depth: {hashState.globalDepth}</div>
+          <div>Max Global Depth: {maxGlobalDepth}</div>
+          <div>Bucket Capacity: {bucketCapacity}</div>
+          <div>Total Buckets: {hashState.buckets.size}</div>
+          <div>Directory Size: {hashState.directory.length}</div>
+        </div>
       </div>
+
+      
 
       {/* Hash Structure Visualization */}
       <div className="visualization-container">
@@ -383,18 +496,47 @@ const ExtendibleHashVisualization: React.FC = () => {
         </div>
       </div>
 
-      {/* Algorithm Info */}
-      <div className="info-panel">
-        <h3>Current Configuration</h3>
-        <div className="info-grid">
-          <div>Hash Function: key % {hashModulo}</div>
-          <div>Global Depth: {hashState.globalDepth}</div>
-          <div>Max Global Depth: {maxGlobalDepth}</div>
-          <div>Bucket Capacity: {bucketCapacity}</div>
-          <div>Total Buckets: {hashState.buckets.size}</div>
-          <div>Directory Size: {hashState.directory.length}</div>
-        </div>
+
+            {/* Insert Panel */}
+      <div className="insert-panel">
+        <form onSubmit={handleInsert}>
+          <div className="input-container">
+            <input
+              type="number"
+              placeholder="Enter key (any positive integer)"
+              value={newKey}
+              onChange={handleKeyChange}
+              min="0"
+              required
+            />
+            {hashPreview && (
+              <div className="hash-preview">
+                <div className="hash-value">
+                  <span className="label">Hash Value, h(k) = </span>
+                  <span className="value">{hashPreview.hash}</span>
+                </div>
+                <div className="binary-form">
+                  <span className="label">Binary form of h(k) = </span>
+                  <span className="binary">{hashPreview.binary}</span>
+                </div>
+                {collisionMessage && (
+                  <div className="collision-message">
+                    <span className="collision-text">{collisionMessage}</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          <button 
+            type="submit" 
+            disabled={!newKey || !hashPreview || (collisionMessage?.includes('Cannot insert!'))}
+          >
+            Insert Key
+          </button>
+        </form>
+
       </div>
+            
     </div>
   );
 };
