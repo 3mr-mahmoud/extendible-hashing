@@ -2,7 +2,7 @@
 
 An interactive, educational visualization of the **Extendible Hashing** algorithm used in Database Management Systems (DBMS). Built with modern web technologies including Astro, React, and TypeScript for optimal performance and learning experience.
 
-![Extendible Hashing Demo](https://img.shields.io/badge/Demo-Live%20Preview-blue?style=for-the-badge)
+[![Extendible Hashing Demo](https://img.shields.io/badge/Demo-Live%20Preview-blue?style=for-the-badge)](https://3mr-mahmoud.github.io/extendible-hashing/)
 ![Built with Astro](https://img.shields.io/badge/Built%20with-Astro-FF5D01?style=for-the-badge&logo=astro)
 ![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
