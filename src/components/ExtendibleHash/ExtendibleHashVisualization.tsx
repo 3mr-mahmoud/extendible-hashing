@@ -33,7 +33,7 @@ interface ExtendibleHashState {
 const ExtendibleHashVisualization: React.FC = () => {
   // Configuration state
   const [hashModulo, setHashModulo] = useState(32);
-  const [maxGlobalDepth, setMaxGlobalDepth] = useState(4);
+  const [maxGlobalDepth, setMaxGlobalDepth] = useState(5);
   const [bucketCapacity, setBucketCapacity] = useState(2);
   const [newKey, setNewKey] = useState<string>('');
   const [animatingBucket, setAnimatingBucket] = useState<number | null>(null);
@@ -225,9 +225,12 @@ const ExtendibleHashVisualization: React.FC = () => {
       while (!insertionCompleted && iteration < maxIterations) {
         iteration++;
         const targetBucket = findBucket(key, currentState);
-        
+        console.log(`Attempting2 to insert key ${key} into bucket ${targetBucket.id}`);
+        console.log(currentState);
         // Check if bucket has space
+        console.log(`Bucket ${targetBucket.id} has ${targetBucket.entries.length}/${targetBucket.maxCapacity} entries.`);
         if (targetBucket.entries.length < targetBucket.maxCapacity) {
+          console.log(`Inserting key ${key} into bucket ${targetBucket.id}`);
           // We can insert here
           const updatedBucket = {
             ...targetBucket,
@@ -243,24 +246,16 @@ const ExtendibleHashVisualization: React.FC = () => {
           // Need to split bucket - check if we can split
           if (targetBucket.localDepth >= currentState.maxGlobalDepth) {
             // Cannot split anymore, force insert (overflow situation)
-            console.warn(`Cannot split bucket ${targetBucket.id} further. Max depth reached. Forcing insertion.`);
-            const updatedBucket = {
-              ...targetBucket,
-              entries: [...targetBucket.entries, newEntry],
-            };
-            
-            const newBuckets = new Map(currentState.buckets);
-            newBuckets.set(targetBucket.id, updatedBucket);
-            
-            currentState = { ...currentState, buckets: newBuckets };
+            // do nothing for now
+            alert(`Warning: Bucket ${targetBucket.id} is full and cannot be split further. we won't insert the key ${key} unless you increase the bucket capacity or max global depth.`);
             insertionCompleted = true;
           } else {
             // Split the bucket and continue the loop
             setAnimatingBucket(targetBucket.id);
             setTimeout(() => setAnimatingBucket(null), 1000);
-            
+
+            console.log(`Splitting bucket ${targetBucket.id}, iteration ${iteration}. Trying insertion again.`);
             currentState = splitBucket(targetBucket.id, currentState);
-            console.log(`Split bucket ${targetBucket.id}, iteration ${iteration}. Trying insertion again.`);
           }
         }
       }
@@ -382,7 +377,6 @@ const ExtendibleHashVisualization: React.FC = () => {
 
   return (
     <div className="extendible-hash-container">
-      <h1>Extendible Hashing Visualization</h1>
       
       {/* Configuration Panel */}
       <div className="config-panel">

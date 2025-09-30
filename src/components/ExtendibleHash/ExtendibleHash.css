@@ -14,7 +14,7 @@
   margin-bottom: 30px;
   font-size: 2.5rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #5227FF 0%, #764ba2 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -60,7 +60,7 @@
 
 .config-panel input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #5227FF;
   box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
 }
 
@@ -181,12 +181,12 @@
 
 .insert-panel input:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+  border-color: #5227FF;
+  box-shadow: 0 0 0 2px rgba(82, 39, 255, 0.2);
 }
 
 .insert-panel button {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #5227FF 0%, #764ba2 100%);
   color: white;
   border: none;
   border-radius: 6px;
@@ -252,7 +252,7 @@
 }
 
 .arrow {
-  color: #667eea;
+  color: #5227FF;
   font-size: 16px;
 }
 
@@ -287,7 +287,7 @@
 }
 
 .bucket:hover {
-  border-color: #667eea;
+  border-color: #5227FF;
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
 }
 
@@ -467,7 +467,7 @@
   background: #2a2a2a;
   padding: 10px 15px;
   border-radius: 6px;
-  border-left: 3px solid #667eea;
+  border-left: 3px solid #5227FF;
   font-family: 'Monaco', 'Menlo', monospace;
   font-size: 14px;
 }

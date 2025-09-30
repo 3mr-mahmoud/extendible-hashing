@@ -3,7 +3,7 @@
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="icon" type="image/svg+xml" href="/extendible-hashing/favicon.svg" />
 		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'">
 		<meta name="generator" content={Astro.generator} />
 		<title>Extendible Hash Visualizer</title>
@@ -52,6 +52,19 @@
 	textarea:focus-visible {
 		outline: 2px solid #667eea;
 		outline-offset: 2px;
+	}
+
+
+	.main-title {
+		text-align: center;
+		font-size: 3rem;
+		margin-top: 2rem;
+		margin-bottom: 1rem;
+		background: linear-gradient(90deg, #5227FF, #FF9FFC, #B19EEF);
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		background-clip: text;
+		color: transparent;
 	}
 
 	.footer {
@@ -105,6 +118,12 @@
 	.credits-right {
 		font-size: 13px;
 		opacity: 0.8;
+	}
+
+	.credits-bar a {
+		color: #fff;
+		text-decoration: underline;
+		transition: color 0.3s ease;
 	}
 
 	.heart {
