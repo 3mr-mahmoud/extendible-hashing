@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import './ExtendibleHash.css';
 
 interface HashEntry {
@@ -39,6 +39,8 @@ const ExtendibleHashVisualization: React.FC = () => {
   const [animatingBucket, setAnimatingBucket] = useState<number | null>(null);
   const [hashPreview, setHashPreview] = useState<{hash: number, binary: string} | null>(null);
   const [collisionMessage, setCollisionMessage] = useState<string | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Initialize empty hash structure with 2 buckets
   const initializeHash = useCallback((): ExtendibleHashState => {
@@ -73,6 +75,89 @@ const ExtendibleHashVisualization: React.FC = () => {
   }, [bucketCapacity, maxGlobalDepth, hashModulo]);
 
   const [hashState, setHashState] = useState<ExtendibleHashState>(initializeHash);
+
+  // Draw connection lines on canvas
+  const drawConnections = useCallback(() => {
+    const canvas = canvasRef.current;
+    const container = containerRef.current;
+    if (!canvas || !container) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Set canvas size to match container
+    const rect = container.getBoundingClientRect();
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Set line style
+    ctx.strokeStyle = '#5227FF';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([]);
+
+    // Draw lines for each directory entry to its bucket
+    hashState.directory.forEach((entry, index) => {
+      const dirElement = document.getElementById(`dir-entry-${index}`);
+      const bucketElement = document.getElementById(`bucket-${entry.bucketId}`);
+
+      if (dirElement && bucketElement) {
+        const dirRect = dirElement.getBoundingClientRect();
+        const bucketRect = bucketElement.getBoundingClientRect();
+        const containerRect = rect;
+
+        // Calculate relative positions
+        const x1 = dirRect.right - containerRect.left;
+        const y1 = dirRect.top + dirRect.height / 2 - containerRect.top;
+        const x2 = bucketRect.left - containerRect.left;
+        const y2 = bucketRect.top + bucketRect.height / 2 - containerRect.top;
+
+        // Draw line
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+
+        // Draw arrowhead
+        const angle = Math.atan2(y2 - y1, x2 - x1);
+        const arrowSize = 8;
+        ctx.beginPath();
+        ctx.moveTo(x2, y2);
+        ctx.lineTo(
+          x2 - arrowSize * Math.cos(angle - Math.PI / 6),
+          y2 - arrowSize * Math.sin(angle - Math.PI / 6)
+        );
+        ctx.lineTo(
+          x2 - arrowSize * Math.cos(angle + Math.PI / 6),
+          y2 - arrowSize * Math.sin(angle + Math.PI / 6)
+        );
+        ctx.closePath();
+        ctx.fillStyle = '#5227FF';
+        ctx.fill();
+      }
+    });
+  }, [hashState.directory]);
+
+  // Redraw connections when hash state changes or on resize
+  useEffect(() => {
+    drawConnections();
+
+    // Redraw on window resize
+    const handleResize = () => {
+      drawConnections();
+    };
+
+    window.addEventListener('resize', handleResize);
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(drawConnections, 100);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      clearTimeout(timer);
+    };
+  }, [drawConnections]);
 
   // Hash function
   const hashFunction = useCallback((key: number): number => {
@@ -437,13 +522,22 @@ const ExtendibleHashVisualization: React.FC = () => {
       
 
       {/* Hash Structure Visualization */}
-      <div className="visualization-container">
+      <div className="visualization-container" ref={containerRef}>
+        <canvas 
+          ref={canvasRef}
+          className="connection-canvas"
+        />
         {/* Directory */}
         <div className="directory-section">
           <h3>Directory (Global Depth: {hashState.globalDepth})</h3>
           <div className="directory">
             {hashState.directory.map((entry, index) => (
-              <div key={index} className="directory-entry">
+              <div 
+                key={index}
+                id={`dir-entry-${index}`}
+                className="directory-entry"
+                data-bucket-id={entry.bucketId}
+              >
                 <span className="binary-addr">{entry.binaryAddress || '∅'}</span>
                 <span className="arrow">→</span>
                 <span className="bucket-ref">Bucket {entry.bucketId}</span>
@@ -459,6 +553,7 @@ const ExtendibleHashVisualization: React.FC = () => {
             {Array.from(hashState.buckets.values()).map((bucket) => (
               <div
                 key={bucket.id}
+                id={`bucket-${bucket.id}`}
                 className={`bucket ${animatingBucket === bucket.id ? 'splitting' : ''}`}
               >
                 <div className="bucket-header">
