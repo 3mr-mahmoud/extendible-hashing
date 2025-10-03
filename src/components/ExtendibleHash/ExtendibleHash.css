@@ -511,19 +511,28 @@
 /* Responsive Design */
 @media (max-width: 1024px) {
   .visualization-container {
-    flex-direction: column;
+    flex-direction: row;
+    gap: 20px;
   }
   
   .directory-section {
-    flex: 1;
+    flex: 0 0 200px;
   }
   
   .buckets-section {
-    width: 100%;
+    flex: 1;
+  }
+  
+  .bucket {
+    max-width: 100%;
   }
 }
 
 @media (max-width: 768px) {
+  .extendible-hash-container h1 {
+    font-size: 2rem;
+  }
+  
   .config-group {
     flex-direction: column;
     gap: 15px;
@@ -534,6 +543,62 @@
     gap: 20px;
   }
   
+  .visualization-container {
+    flex-direction: row;
+    gap: 15px;
+  }
+  
+  .directory-section {
+    flex: 0 0 150px;
+  }
+  
+  .directory-section h3 {
+    font-size: 1rem;
+  }
+  
+  .buckets-section h3 {
+    font-size: 1rem;
+  }
+  
+  .directory {
+    padding: 10px;
+  }
+  
+  .directory-entry {
+    padding: 8px 5px;
+    font-size: 12px;
+  }
+  
+  .binary-addr {
+    font-size: 12px;
+    min-width: 40px;
+  }
+  
+  .bucket-ref {
+    font-size: 11px;
+  }
+  
+  .arrow {
+    font-size: 12px;
+  }
+  
+  .bucket {
+    padding: 10px 12px;
+  }
+  
+  .bucket-header {
+    font-size: 12px;
+  }
+  
+  .bucket-id {
+    font-size: 12px;
+  }
+  
+  .local-depth {
+    font-size: 10px;
+    padding: 2px 6px;
+  }
+  
   .insert-panel form {
     flex-direction: column;
     align-items: stretch;
@@ -541,6 +606,7 @@
   
   .bucket-entries {
     flex-direction: column;
+    gap: 6px;
   }
   
   .entry {
@@ -549,6 +615,7 @@
     border-left: 3px solid #4ade80;
     min-width: auto;
     width: 100%;
+    padding: 6px 10px;
   }
   
   .entry.empty {
@@ -558,10 +625,28 @@
   .entry .key {
     margin-bottom: 0;
     margin-right: 8px;
+    font-size: 14px;
+  }
+  
+  .entry .hash-info {
+    font-size: 10px;
   }
   
   .info-grid {
     grid-template-columns: 1fr;
+  }
+  
+  .info-panel {
+    padding: 15px;
+  }
+  
+  .info-panel h3 {
+    font-size: 1.1rem;
+  }
+  
+  .info-grid > div {
+    font-size: 12px;
+    padding: 8px 12px;
   }
 }
 
