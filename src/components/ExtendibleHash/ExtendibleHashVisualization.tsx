@@ -37,6 +37,7 @@ const ExtendibleHashVisualization: React.FC = () => {
   const [bucketCapacity, setBucketCapacity] = useState(2);
   const [newKey, setNewKey] = useState<string>('');
   const [animatingBucket, setAnimatingBucket] = useState<number | null>(null);
+  const [newlyCreatedBucket, setNewlyCreatedBucket] = useState<number | null>(null);
   const [hashPreview, setHashPreview] = useState<{hash: number, binary: string} | null>(null);
   const [collisionMessage, setCollisionMessage] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -281,39 +282,46 @@ const ExtendibleHashVisualization: React.FC = () => {
     };
   }, [hashFunction, getBinaryAddress]);
 
-  // Insert a new key
+  // Insert a new key with animated splits
   const insertEntry = useCallback((key: number) => {
-    setHashState(prevState => {
-      let currentState = { ...prevState };
+    // Get current state to work with
+    let currentState = { ...hashState };
+    
+    // Check if key already exists anywhere in the hash table
+    for (const bucket of currentState.buckets.values()) {
+      const existingEntryIndex = bucket.entries.findIndex(entry => entry.key === key);
+      if (existingEntryIndex !== -1) {
+        // Key already exists, no need to insert
+        console.log(`Key ${key} already exists in the hash table`);
+        return;
+      }
+    }
+    
+    const hash = hashFunction(key);
+    const hashBitsLength = Math.ceil(Math.log2(hashModulo));
+    const binaryHash = hash.toString(2).padStart(hashBitsLength, '0');
+
+    // Add new entry
+    const newEntry: HashEntry = { key, hash, binaryHash };
+    
+    // Process splits with animation delays
+    const processSplitsAndInsert = (iteration: number = 0) => {
+      const maxIterations = 10;
       
-      // Check if key already exists anywhere in the hash table
-      for (const bucket of currentState.buckets.values()) {
-        const existingEntryIndex = bucket.entries.findIndex(entry => entry.key === key);
-        if (existingEntryIndex !== -1) {
-          // Key already exists, no need to insert
-          return currentState;
-        }
+      if (iteration >= maxIterations) {
+        console.error(`Maximum iterations reached while trying to insert key ${key}. Insertion may have failed.`);
+        return;
       }
       
-      const hash = hashFunction(key);
-      const hashBitsLength = Math.ceil(Math.log2(hashModulo));
-      const binaryHash = hash.toString(2).padStart(hashBitsLength, '0');
-
-      // Add new entry
-      const newEntry: HashEntry = { key, hash, binaryHash };
-      
-      // Keep splitting until we can insert the entry
-      let insertionCompleted = false;
-      let maxIterations = 10; // Prevent infinite loops
-      let iteration = 0;
-      
-      while (!insertionCompleted && iteration < maxIterations) {
-        iteration++;
-        const targetBucket = findBucket(key, currentState);
-        console.log(`Attempting2 to insert key ${key} into bucket ${targetBucket.id}`);
-        console.log(currentState);
-        // Check if bucket has space
+      // Get fresh state
+      setHashState(prevState => {
+        let workingState = { ...prevState };
+        const targetBucket = findBucket(key, workingState);
+        
+        console.log(`Iteration ${iteration + 1}: Attempting to insert key ${key} into bucket ${targetBucket.id}`);
         console.log(`Bucket ${targetBucket.id} has ${targetBucket.entries.length}/${targetBucket.maxCapacity} entries.`);
+        
+        // Check if bucket has space
         if (targetBucket.entries.length < targetBucket.maxCapacity) {
           console.log(`Inserting key ${key} into bucket ${targetBucket.id}`);
           // We can insert here
@@ -322,36 +330,46 @@ const ExtendibleHashVisualization: React.FC = () => {
             entries: [...targetBucket.entries, newEntry],
           };
           
-          const newBuckets = new Map(currentState.buckets);
+          const newBuckets = new Map(workingState.buckets);
           newBuckets.set(targetBucket.id, updatedBucket);
           
-          currentState = { ...currentState, buckets: newBuckets };
-          insertionCompleted = true;
+          return { ...workingState, buckets: newBuckets };
         } else {
           // Need to split bucket - check if we can split
-          if (targetBucket.localDepth >= currentState.maxGlobalDepth) {
-            // Cannot split anymore, force insert (overflow situation)
-            // do nothing for now
-            alert(`Warning: Bucket ${targetBucket.id} is full and cannot be split further. we won't insert the key ${key} unless you increase the bucket capacity or max global depth.`);
-            insertionCompleted = true;
+          if (targetBucket.localDepth >= workingState.maxGlobalDepth) {
+            // Cannot split anymore
+            alert(`Warning: Bucket ${targetBucket.id} is full and cannot be split further. We won't insert key ${key} unless you increase the bucket capacity or max global depth.`);
+            return workingState;
           } else {
-            // Split the bucket and continue the loop
+            // Start split animation
             setAnimatingBucket(targetBucket.id);
-            setTimeout(() => setAnimatingBucket(null), 1000);
-
-            console.log(`Splitting bucket ${targetBucket.id}, iteration ${iteration}. Trying insertion again.`);
-            currentState = splitBucket(targetBucket.id, currentState);
+            console.log(`Splitting bucket ${targetBucket.id}, iteration ${iteration + 1}`);
+            
+            // Perform the split
+            const newState = splitBucket(targetBucket.id, workingState);
+            
+            // Highlight the newly created bucket
+            setNewlyCreatedBucket(workingState.nextBucketId);
+            
+            // Schedule next iteration after animation
+            setTimeout(() => {
+              setAnimatingBucket(null);
+              setNewlyCreatedBucket(null);
+              // Continue with next iteration after a brief pause
+              setTimeout(() => {
+                processSplitsAndInsert(iteration + 1);
+              }, 100);
+            }, 1000);
+            
+            return newState;
           }
         }
-      }
-      
-      if (iteration >= maxIterations) {
-        console.error(`Maximum iterations reached while trying to insert key ${key}. Insertion may have failed.`);
-      }
-      
-      return currentState;
-    });
-  }, [findBucket, splitBucket, hashFunction, hashModulo]);
+      });
+    };
+    
+    // Start the process
+    processSplitsAndInsert(0);
+  }, [hashState, findBucket, splitBucket, hashFunction, hashModulo]);
 
   // Check if hash already exists in the hash table
   const checkHashCollision = useCallback((hash: number): {count: number, keys: number[], shouldPrevent: boolean, message: string} | null => {
@@ -446,6 +464,7 @@ const ExtendibleHashVisualization: React.FC = () => {
   const handleReset = useCallback(() => {
     setHashState(initializeHash());
     setAnimatingBucket(null);
+    setNewlyCreatedBucket(null);
     setNewKey('');
     setHashPreview(null);
     setCollisionMessage(null);
@@ -455,6 +474,7 @@ const ExtendibleHashVisualization: React.FC = () => {
   const handleConfigChange = useCallback(() => {
     setHashState(initializeHash());
     setAnimatingBucket(null);
+    setNewlyCreatedBucket(null);
     setNewKey('');
     setHashPreview(null);
     setCollisionMessage(null);
@@ -554,7 +574,7 @@ const ExtendibleHashVisualization: React.FC = () => {
               <div
                 key={bucket.id}
                 id={`bucket-${bucket.id}`}
-                className={`bucket ${animatingBucket === bucket.id ? 'splitting' : ''}`}
+                className={`bucket ${animatingBucket === bucket.id ? 'splitting' : ''} ${newlyCreatedBucket === bucket.id ? 'newly-created' : ''}`}
               >
                 <div className="bucket-header">
                   <span className="bucket-id">Bucket {bucket.id}</span>

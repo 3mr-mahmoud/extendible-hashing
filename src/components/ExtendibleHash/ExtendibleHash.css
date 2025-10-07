@@ -341,6 +341,74 @@
   animation: splitGlow 1s ease-in-out;
 }
 
+/* Newly Created Bucket Highlight */
+.bucket.newly-created {
+  animation: newBucketAnimation 1s ease-in-out;
+  border-color: #4ade80;
+  position: relative;
+  z-index: 10;
+}
+
+.bucket.newly-created::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, #4ade80, #22c55e, #4ade80);
+  border-radius: 14px;
+  z-index: -1;
+  animation: newBucketGlow 1s ease-in-out;
+}
+
+@keyframes newBucketAnimation {
+  0% {
+    transform: scale(0.8) translateY(-10px);
+    opacity: 0;
+    background: #1a1a1a;
+    box-shadow: 0 4px 12px rgba(74, 222, 128, 0.3);
+  }
+  15% {
+    transform: scale(1.08) translateY(0);
+    opacity: 1;
+    background: #0a2a1a;
+    box-shadow: 0 8px 24px rgba(74, 222, 128, 0.6);
+  }
+  30% {
+    transform: scale(1.12);
+    background: #0a3a1a;
+    box-shadow: 0 12px 36px rgba(74, 222, 128, 0.8);
+  }
+  50% {
+    transform: scale(1.06);
+    background: #0a2a1a;
+    box-shadow: 0 10px 30px rgba(74, 222, 128, 0.7);
+  }
+  70% {
+    transform: scale(1.03);
+    background: #0a1a1a;
+    box-shadow: 0 6px 18px rgba(74, 222, 128, 0.5);
+  }
+  100% {
+    transform: scale(1);
+    background: #1a1a1a;
+    box-shadow: 0 4px 12px rgba(74, 222, 128, 0.3);
+  }
+}
+
+@keyframes newBucketGlow {
+  0% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
 @keyframes splitAnimation {
   0% {
     transform: scale(1) rotate(0deg);
