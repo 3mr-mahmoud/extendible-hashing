@@ -111,6 +111,7 @@
 }
 	.credits-bar {
 		display: flex;
+		gap: 1rem;
 		justify-content: space-between;
 		align-items: center;
 		padding: 15px 30px;
@@ -124,6 +125,7 @@
 	.credits-left {
 		display: flex;
 		align-items: center;
+		flex-wrap: wrap;
 		gap: 5px;
 	}
 
@@ -169,13 +171,111 @@
 	@media (max-width: 768px) {
 		.credits-bar {
 			flex-direction: column;
-			gap: 10px;
+			gap: 1rem;
 			text-align: center;
 			padding: 20px 15px;
 		}
 		
 		.credits-right {
 			font-size: 12px;
+		}
+	}
+
+	/* Algorithm Description Styles */
+	.algorithm-description {
+		max-width: 1200px;
+		margin: 25px auto;
+		padding: 40px;
+		background: #1a1a1a;
+		border: 1px solid #333;
+		border-radius: 16px;
+		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+	}
+
+	.algorithm-description h2 {
+		text-align: center;
+		font-size: 2.5rem;
+		margin-bottom: 40px;
+		background: linear-gradient(135deg, #5227FF 0%, #764ba2 100%);
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		background-clip: text;
+		color: transparent;
+	}
+
+	.description-section {
+		margin-bottom: 35px;
+		padding-bottom: 25px;
+		border-bottom: 1px solid #2a2a2a;
+	}
+
+	.description-section:last-child {
+		border-bottom: none;
+		margin-bottom: 0;
+		padding-bottom: 0;
+	}
+
+	.description-section h3 {
+		color: #fff;
+		font-size: 1.6rem;
+		margin-bottom: 15px;
+		font-weight: 600;
+	}
+
+	.description-section p {
+		color: #b3b3b3;
+		line-height: 1.8;
+		margin-bottom: 15px;
+		font-size: 1.05rem;
+	}
+
+	.description-section ul {
+		list-style: none;
+		padding-left: 0;
+		margin: 15px 0;
+	}
+
+	.description-section ul li {
+		color: #b3b3b3;
+		padding: 10px 0;
+		padding-left: 30px;
+		position: relative;
+		line-height: 1.6;
+		font-size: 1.05rem;
+	}
+
+	.description-section ul li::before {
+		content: '→';
+		position: absolute;
+		left: 0;
+		color: #5227FF;
+		font-weight: bold;
+		font-size: 1.2rem;
+	}
+
+	.description-section strong {
+		color: #fff;
+		font-weight: 600;
+	}
+
+	@media (max-width: 768px) {
+		.algorithm-description {
+			margin: 40px 20px;
+			padding: 25px 20px;
+		}
+
+		.algorithm-description h2 {
+			font-size: 2rem;
+			margin-bottom: 30px;
+		}
+
+		.description-section h3 {
+			font-size: 1.4rem;
+		}
+
+		.description-section p,
+		.description-section ul li {
+			font-size: 1rem;
 		}
 	}
 </style>

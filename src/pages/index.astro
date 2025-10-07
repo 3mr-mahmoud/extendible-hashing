@@ -5,8 +5,93 @@ import LiquidEther from '../components/LiquidEther/LiquidEther';
 ---
 
 <Layout>
-	<h1 class="main-title">Extendible Hashing Visualization</h1>
+	<h1 class="main-title">Extendible Hashing Visualization (MSB)</h1>
 	<ExtendibleHashVisualization client:load />
+
+	<!-- Algorithm Description for SEO -->
+	<div class="algorithm-description">
+
+		<section class="description-section">
+			<h2>Interactive Visualization Features</h2>
+			<p>
+				This <strong>visualization tool</strong> helps you understand <strong>extendible hashing</strong> through interactive demonstrations:
+			</p>
+			<ul>
+				<li>Real-time bucket splitting animations</li>
+				<li>Directory doubling visualization</li>
+				<li>MSB-based hash addressing</li>
+				<li>Collision detection and prevention</li>
+				<li>Configurable parameters (hash modulo, bucket capacity, depth)</li>
+				<li>Binary representation of hash values</li>
+			</ul>
+		</section>
+
+		<h2>About Extendible Hashing Algorithm</h2>
+		
+		<section class="description-section">
+			<h3>What is Extendible Hashing?</h3>
+			<p>
+				Extendible hashing is a dynamic hashing technique used in database management systems (DBMS) to efficiently handle 
+				large datasets with minimal reorganization. Unlike static hashing, extendible hashing allows the hash table to grow 
+				and shrink dynamically as data is inserted or deleted, making it ideal for applications where the data size is unpredictable.
+			</p>
+		</section>
+
+		<section class="description-section">
+			<h3>How Does Extendible Hashing Work?</h3>
+			<p>
+				The algorithm uses a directory (or index) that points to buckets where actual data is stored. Each bucket has a 
+				local depth, and the directory has a global depth. The hash function converts keys into binary addresses, and the 
+				most significant bits (MSB) of these addresses determine which bucket a key belongs to.
+			</p>
+			<p>
+				When a bucket becomes full (overflow), it splits into two buckets, redistributing entries based on an additional 
+				bit from the hash value. If necessary, the directory doubles in size to accommodate the split. This approach 
+				minimizes the need for complete reorganization when data grows.
+			</p>
+		</section>
+
+		<section class="description-section">
+			<h3>Key Components</h3>
+			<ul>
+				<li><strong>Directory:</strong> 
+					These containers store pointers to buckets. Each directory is given a unique id which may change each time when expansion takes place. The hash function returns this directory id which is used to navigate to the appropriate bucket. Number of Directories = 2^Global Depth.
+				</li>
+				<li><strong>Buckets:</strong> They store the hashed keys. Directories point to buckets. A bucket may contain more than one pointers to it if its local depth is less than the global depth.
+				</li>
+				<li><strong>Global Depth:</strong> It is associated with the Directories. They denote the number of bits which are used by the hash function to categorize the keys. Global Depth = Number of bits in directory id.</li>
+				<li><strong>Local Depth:</strong> It is the same as that of Global Depth except for the fact that Local Depth is associated with the buckets and not the directories. Local depth in accordance with the global depth is used to decide the action that to be performed in case an overflow occurs. Local Depth is always less than or equal to the Global Depth.</li>
+				<li><strong>Bucket Splitting:</strong> When the number of elements in a bucket exceeds a particular size, then the bucket is split into two parts.</li>
+				<li><strong>Directory Expansion:</strong> Directory Expansion Takes place when a bucket overflows. Directory Expansion is performed when the local depth of the overflowing bucket is equal to the global depth.</li>
+			</ul>
+		</section>
+
+		<section class="description-section">
+			<h3>Advantages of Extendible Hashing</h3>
+			<ul>
+				<li>Data retrieval is less expensive (in terms of computing).</li>
+				<li>No problem of Data-loss since the storage capacity increases dynamically.</li>
+				<li>With dynamic changes in hashing function, associated old values are rehashed with respect to the new hash function.</li>
+			</ul>
+		</section>
+
+		<section class="description-section">
+			<h3>Use Cases in Database Systems</h3>
+			<p>
+				Extendible hashing is widely used in modern database management systems for indexing and data retrieval. 
+				It's particularly effective for:
+			</p>
+			<ul>
+				<li>B-tree alternatives in database indexes</li>
+				<li>File systems and directory structures</li>
+				<li>Distributed hash tables (DHT)</li>
+				<li>Cache implementations</li>
+				<li>Dynamic symbol tables in compilers</li>
+			</ul>
+		</section>
+
+		
+	</div>
 
 	<div class="footer">
 		<div style={{ width: '100%', height: '100%', position: 'absolute' }}>
@@ -35,7 +120,7 @@ import LiquidEther from '../components/LiquidEther/LiquidEther';
 	<!-- Credits Bar -->
 	<div class="credits-bar">
 		<div class="credits-left">
-			Designed and Developed with 
+			Designed & Developed with 
 			<svg class="heart" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
 				<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
 			</svg>
